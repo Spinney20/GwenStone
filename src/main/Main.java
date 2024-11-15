@@ -1,12 +1,22 @@
 package main;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import fileio.CardInput;
+import fileio.DecksInput;
+import fileio.StartGameInput;
+import fileio.ActionsInput;
+import game.Game;
 import checker.Checker;
+import java.util.ArrayList;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import checker.CheckerConstants;
 import fileio.Input;
+import game.Gameboard;
+import game.Hero;
+import game.Minion;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,34 +71,183 @@ public final class Main {
      * @param filePath2 for output file
      * @throws IOException in case of exceptions to reading / writing
      */
-    public static void action(final String filePath1,
-                              final String filePath2) throws IOException {
+    public static void action(final String filePath1, final String filePath2) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
-        Input inputData = objectMapper.readValue(new File(CheckerConstants.TESTS_PATH + filePath1),
-                Input.class);
+        Input inputData = objectMapper.readValue(new File(CheckerConstants.TESTS_PATH + filePath1), Input.class);
 
         ArrayNode output = objectMapper.createArrayNode();
 
-        /*
-         * TODO Implement your function here
-         *
-         * How to add output to the output array?
-         * There are multiple ways to do this, here is one example:
-         *
-         * ObjectMapper mapper = new ObjectMapper();
-         *
-         * ObjectNode objectNode = mapper.createObjectNode();
-         * objectNode.put("field_name", "field_value");
-         *
-         * ArrayNode arrayNode = mapper.createArrayNode();
-         * arrayNode.add(objectNode);
-         *
-         * output.add(arrayNode);
-         * output.add(objectNode);
-         *
-         */
+        StartGameInput startGame = inputData.getGames().get(0).getStartGame();
+        DecksInput playerOneDecks = inputData.getPlayerOneDecks();
+        DecksInput playerTwoDecks = inputData.getPlayerTwoDecks();
+        Game game = new Game(startGame, playerOneDecks, playerTwoDecks);
+        Gameboard gameboard = game.getGameboard();
+
+        for (ActionsInput action : inputData.getGames().get(0).getActions()) {
+            ObjectNode gameOutput = objectMapper.createObjectNode();
+
+            switch (action.getCommand()) {
+                case "getPlayerDeck":
+                    ArrayNode deckOutput = objectMapper.createArrayNode();
+                    ArrayList<Minion> deck;
+
+                    if (action.getPlayerIdx() == 1) {
+                        deck = game.getPlayerOneDeck();
+                    } else {
+                        deck = game.getPlayerTwoDeck();
+                    }
+
+                    for (Minion card : deck) {
+                        ObjectNode cardNode = objectMapper.createObjectNode();
+                        cardNode.put("mana", card.getMana());
+                        cardNode.put("attackDamage", card.getAttackDamage());
+                        cardNode.put("health", card.getHealth());
+                        cardNode.put("description", card.getDescription());
+                        ArrayNode colorsNode = objectMapper.createArrayNode();
+                        for (String color : card.getColors()) {
+                            colorsNode.add(color);
+                        }
+                        cardNode.set("colors", colorsNode);
+                        cardNode.put("name", card.getName());
+                        deckOutput.add(cardNode);
+                    }
+
+                    gameOutput.put("command", "getPlayerDeck");
+                    gameOutput.put("playerIdx", action.getPlayerIdx());
+                    gameOutput.set("output", deckOutput);
+                    output.add(gameOutput);
+                    break;
+
+                case "getPlayerHero":
+                    Hero hero = action.getPlayerIdx() == 1 ? game.getPlayerOneHero() : game.getPlayerTwoHero();
+                    if (hero != null) {
+                        ObjectNode heroNode = objectMapper.createObjectNode();
+                        heroNode.put("mana", hero.getMana());
+                        heroNode.put("description", hero.getDescription());
+                        ArrayNode colorsNode = objectMapper.createArrayNode();
+                        for (String color : hero.getColors()) {
+                            colorsNode.add(color);
+                        }
+                        heroNode.set("colors", colorsNode);
+                        heroNode.put("name", hero.getName());
+                        heroNode.put("health", hero.getHealth());
+
+                        gameOutput.put("command", "getPlayerHero");
+                        gameOutput.put("playerIdx", action.getPlayerIdx());
+                        gameOutput.set("output", heroNode);
+                    }
+                    output.add(gameOutput);
+                    break;
+
+                case "getPlayerTurn":
+                    gameOutput.put("command", "getPlayerTurn");
+                    gameOutput.put("output", game.getCurrentPlayer());
+                    output.add(gameOutput);
+                    break;
+
+                case "placeCard":
+                    int playerIdx = game.getCurrentPlayer();
+                    int handIdx = action.getHandIdx();
+
+                    boolean cardPlaced;
+                    if (playerIdx == 1) {
+                        cardPlaced = game.placeCard(1, handIdx);
+                    } else {
+                        cardPlaced = game.placeCard(2, handIdx);
+                    }
+                    break;
+
+                case "endPlayerTurn":
+                    game.endPlayerTurn();
+                    break;
+
+                case "getCardsInHand":
+                    ArrayNode handOutput = objectMapper.createArrayNode();
+
+                    // What player hand you want I give you :))
+                    ArrayList<Minion> hand;
+                    if (action.getPlayerIdx() == 1) {
+                        hand = game.getPlayerOne().getHand();
+                    } else {
+                        hand = game.getPlayerTwo().getHand();
+                    }
+
+                    // Adding each card with a for in the hand
+                    for (Minion card : hand) {
+                        ObjectNode cardNode = objectMapper.createObjectNode();
+                        cardNode.put("mana", card.getMana());
+                        cardNode.put("attackDamage", card.getAttackDamage());
+                        cardNode.put("health", card.getHealth());
+                        cardNode.put("description", card.getDescription());
+
+                        ArrayNode colorsNode = objectMapper.createArrayNode();
+                        for (String color : card.getColors()) {
+                            colorsNode.add(color);
+                        }
+                        cardNode.set("colors", colorsNode);
+
+                        cardNode.put("name", card.getName());
+                        handOutput.add(cardNode);
+                    }
+
+                    // this is the output for the action
+                    gameOutput.put("command", "getCardsInHand");
+                    gameOutput.put("playerIdx", action.getPlayerIdx());
+                    gameOutput.set("output", handOutput);
+                    output.add(gameOutput);
+                    break;
+
+                case "getPlayerMana":
+                    int mana = game.getPlayerMana(action.getPlayerIdx());
+                    gameOutput.put("command", "getPlayerMana");
+                    gameOutput.put("playerIdx", action.getPlayerIdx());
+                    gameOutput.put("output", mana);
+                    output.add(gameOutput);
+                    break;
+
+                case "getCardsOnTable":
+                    ArrayNode tableOutput = objectMapper.createArrayNode();
+                    ArrayList<ArrayList<Minion>> cardsOnTable = game.getCardsOnTable();
+
+                    for (ArrayList<Minion> rowCards : cardsOnTable) {
+                        ArrayNode rowArray = objectMapper.createArrayNode();
+
+                        for (Minion card : rowCards) {
+                            ObjectNode cardNode = objectMapper.createObjectNode();
+                            cardNode.put("mana", card.getMana());
+                            cardNode.put("attackDamage", card.getAttackDamage());
+                            cardNode.put("health", card.getHealth());
+                            cardNode.put("description", card.getDescription());
+
+                            ArrayNode colorsNode = objectMapper.createArrayNode();
+                            for (String color : card.getColors()) {
+                                colorsNode.add(color);
+                            }
+                            cardNode.set("colors", colorsNode);
+                            cardNode.put("name", card.getName());
+
+                            rowArray.add(cardNode);
+                        }
+
+                        tableOutput.add(rowArray);
+                    }
+
+                    gameOutput.put("command", "getCardsOnTable");
+                    gameOutput.set("output", tableOutput);
+                    output.add(gameOutput);
+                    break;
+
+
+                default:
+                    System.out.println("error " + action.getCommand());
+                    break;
+            }
+        }
 
         ObjectWriter objectWriter = objectMapper.writerWithDefaultPrettyPrinter();
         objectWriter.writeValue(new File(filePath2), output);
     }
+
+
+
 }

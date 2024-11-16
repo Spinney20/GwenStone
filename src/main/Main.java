@@ -149,11 +149,12 @@ public final class Main {
                     int playerIdx = game.getCurrentPlayer();
                     int handIdx = action.getHandIdx();
 
-                    boolean cardPlaced;
-                    if (playerIdx == 1) {
-                        cardPlaced = game.placeCard(1, handIdx);
-                    } else {
-                        cardPlaced = game.placeCard(2, handIdx);
+                    boolean cardPlaced = game.placeCard(playerIdx, handIdx);
+                    if(!cardPlaced) {
+                        gameOutput.put("command", "placeCard");
+                        gameOutput.put("error", game.getErrorMessage());
+                        gameOutput.put("handIdx", handIdx);
+                        output.add(gameOutput);
                     }
                     break;
 
@@ -236,6 +237,55 @@ public final class Main {
                     gameOutput.set("output", tableOutput);
                     output.add(gameOutput);
                     break;
+                case "cardUsesAttack":
+                    int attackerRow = action.getCardAttacker().getX();
+                    int attackerCol = action.getCardAttacker().getY();
+                    int targetRow = action.getCardAttacked().getX();
+                    int targetCol = action.getCardAttacked().getY();
+
+                    String attackResult = game.attackCard(attackerRow, attackerCol, targetRow, targetCol);
+
+                    if (attackResult != null) {
+                        gameOutput.put("command", "cardUsesAttack");
+                        gameOutput.put("error", attackResult);
+                        gameOutput.set("cardAttacker", objectMapper.createObjectNode()
+                                .put("x", attackerRow)
+                                .put("y", attackerCol));
+                        gameOutput.set("cardAttacked", objectMapper.createObjectNode()
+                                .put("x", targetRow)
+                                .put("y", targetCol));
+                        output.add(gameOutput);
+                    }
+                    break;
+                case "getCardAtPosition":
+                    int x = action.getX();
+                    int y = action.getY();
+
+                    Minion card = game.getGameboard().getCardAtPosition(x, y);
+                    ObjectNode cardOutput = objectMapper.createObjectNode();
+                    cardOutput.put("command", "getCardAtPosition");
+                    cardOutput.put("x", x);
+                    cardOutput.put("y", y);
+
+                    if (card != null) {
+                        ObjectNode cardDetails = objectMapper.createObjectNode();
+                        cardDetails.put("mana", card.getMana());
+                        cardDetails.put("attackDamage", card.getAttackDamage());
+                        cardDetails.put("health", card.getHealth());
+                        cardDetails.put("description", card.getDescription());
+                        ArrayNode colorsArray = objectMapper.createArrayNode();
+                        for (String color : card.getColors()) {
+                            colorsArray.add(color);
+                        }
+                        cardDetails.set("colors", colorsArray);
+                        cardDetails.put("name", card.getName());
+                        cardOutput.set("output", cardDetails);
+                    } else {
+                        cardOutput.put("output", "No card available at that position.");
+                    }
+
+                    output.add(cardOutput);
+                    break;
 
 
                 default:
@@ -247,7 +297,5 @@ public final class Main {
         ObjectWriter objectWriter = objectMapper.writerWithDefaultPrettyPrinter();
         objectWriter.writeValue(new File(filePath2), output);
     }
-
-
 
 }

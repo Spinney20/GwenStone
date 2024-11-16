@@ -14,18 +14,37 @@ public class Player {
     private int mana = 1;
 
     public Player(ArrayList<CardInput> deck, Hero hero, int shuffleSeed) {
-
-        // each player has a deck, so we should get the deck from the input
         this.deck = new ArrayList<>();
         for (CardInput cardInput : deck) {
-            this.deck.add(new Minion(cardInput));
+            Minion minion = createMinionFromCardInput(cardInput);
+            this.deck.add(minion);
         }
-        // i must shuffle the deck
         Collections.shuffle(this.deck, new Random(shuffleSeed));
-
-        // initializing the hand to an empty array
         this.hand = new ArrayList<>();
-        this.hero = hero; // assigning the hero
+        this.hero = hero;
+    }
+
+    private Minion createMinionFromCardInput(CardInput cardInput) {
+        String name = cardInput.getName();
+        switch (name) {
+            case "Goliath":
+                return new Goliath(cardInput);
+            case "Warden":
+                return new Warden(cardInput);
+            case "Sentinel":
+                return new Sentinel(cardInput);
+            case "Berserker":
+                return new Berserker(cardInput);
+            case "The Ripper":
+                return new TheRipper(cardInput);
+            case "Miraj":
+                return new Miraj(cardInput);
+            case "The Cursed One":
+                return new TheCursedOne(cardInput);
+            case "Disciple":
+                return new Disciple(cardInput);
+        }
+        return null;
     }
 
     // drawing a card from the deck

@@ -13,6 +13,7 @@ public class Game {
     private int startingPlayerId;
     private int round;
     private Gameboard gameboard;
+    private String errorMessage;
 
     public Game(StartGameInput startGame, DecksInput playerOneDecks, DecksInput playerTwoDecks) {
         initializeGame(startGame, playerOneDecks, playerTwoDecks);
@@ -43,27 +44,33 @@ public class Game {
         this.round = 1; // the game starts from round 1
         this.gameboard = new Gameboard();
     }
-
+    // placing a card on the table
     public boolean placeCard(int playerIndex, int handIndex) {
         Player currentPlayer;
+        // stabilizing the current player
         if (playerIndex == 1) {
             currentPlayer = playerOne;
         } else {
             currentPlayer = playerTwo;
         }
-
+        // getting the card to place
         Minion cardToPlace = currentPlayer.getHand().get(handIndex);
-
+        // error message if the card cannot be placed
+        // because of the mana
         if (!currentPlayer.decrementMana(cardToPlace.getMana())) {
+            errorMessage = "Not enough mana to place card on table.";
             return false;
         }
 
         boolean placedSuccessfully = gameboard.addCard(cardToPlace, playerIndex);
         if (placedSuccessfully) {
             currentPlayer.getHand().remove(handIndex);
-            return true;
+            return true; // card was placed successfully
         } else {
+            //error message if the card cannot be placed
+            // because the row is full
             currentPlayer.incrementMana(cardToPlace.getMana());
+            errorMessage = "Cannot place card on table since row is full.";
             return false;
         }
     }
@@ -79,27 +86,53 @@ public class Game {
         // which means that the starting player has already ended his turn
         if (startingPlayerId == 1) {
             if (currentPlayer == 1) {
-                playerOne.incrementMana(round + 1);
                 currentPlayer = 2;
             } else {
+                //corrected this
+                // mana shuld be incremented for the next round
+                // after the current round ends (the second player's turn)
+                playerOne.incrementMana(round + 1);
                 playerTwo.incrementMana(round + 1);
                 currentPlayer = 1;
                 round++;
+                resetAllMinions(); // reset all minions' attack states
                 playerOne.drawCard();
                 playerTwo.drawCard();
             }
         } else if (startingPlayerId == 2) {
             if (currentPlayer == 2) {
-                playerTwo.incrementMana(round + 1);
                 currentPlayer = 1;
             } else {
+                playerTwo.incrementMana(round + 1);
                 playerOne.incrementMana(round + 1);
                 currentPlayer = 2;
                 round++;
+                resetAllMinions(); // reset all minions' attack states
                 playerOne.drawCard();
                 playerTwo.drawCard();
             }
         }
+    }
+
+    // Reset all minions' attack states
+    //iterating thru the gameboard and setting the hasAttackedThisTurn
+    // to false for all minions -> new round
+    private void resetAllMinions() {
+        for (int row = 0; row < 4; row++) {
+            for (int col = 0; col < 5; col++) {
+                Minion minion = gameboard.getBoard()[row][col];
+                if (minion != null) {
+                    minion.setHasAttackedThisTurn(false);
+                }
+            }
+        }
+    }
+
+    public String attackCard(int attackerRow, int attackerCol, int targetRow, int targetCol) {
+        // As I said in the Gameboard class attackCard method
+        // returns the error if its the case or null if not
+        String result = gameboard.attackCard(attackerRow, attackerCol, targetRow, targetCol, currentPlayer);
+        return result; // result will be used in main
     }
 
 
@@ -152,5 +185,9 @@ public class Game {
 
     public Gameboard getGameboard() {
         return gameboard;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
     }
 }

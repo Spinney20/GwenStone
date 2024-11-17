@@ -11,4 +11,12 @@ public class Warden extends Minion {
     public boolean isFrontRow() {
         return true; // must be in the front row
     }
+
+    @Override
+    public void useAbility(Minion target) {
+    }
+
+    public boolean isTank() {
+        return true;
+    }
 }

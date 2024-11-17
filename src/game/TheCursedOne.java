@@ -11,5 +11,21 @@ public class TheCursedOne extends Minion {
     public boolean isFrontRow() {
         return false;
     }
+
+    @Override
+    public void useAbility(Minion target) {
+        int tempAttack = target.getAttackDamage();
+        target.setAttackDamage(target.getHealth());
+        target.setHealth(tempAttack);
+
+        if (target.getHealth() <= 0) {
+            target.setHealth(0);
+        }
+    }
+
+    public boolean isTank() {
+        return false;
+    }
 }
+
 

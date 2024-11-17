@@ -117,6 +117,7 @@ public class Game {
     // Reset all minions' attack states
     //iterating thru the gameboard and setting the hasAttackedThisTurn
     // to false for all minions -> new round
+    //todo I think i will need this for unfroxing
     private void resetAllMinions() {
         for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 5; col++) {

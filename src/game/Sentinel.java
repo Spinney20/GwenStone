@@ -11,4 +11,12 @@ public class Sentinel extends Minion {
     public boolean isFrontRow() {
         return false; // on the back row
     }
+
+    @Override
+    public void useAbility(Minion target) {
+    }
+
+    public boolean isTank() {
+        return false;
+    }
 }

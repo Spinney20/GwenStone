@@ -11,4 +11,12 @@ public class Berserker extends Minion {
     public boolean isFrontRow() {
         return false; // on the back row
     }
+
+    @Override
+    public void useAbility(Minion target) {
+    }
+    // moved is tank logic in each class
+    public boolean isTank() {
+        return false;
+    }
 }

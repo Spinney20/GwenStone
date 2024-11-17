@@ -67,15 +67,15 @@ public abstract class Minion {
     }
 
     //todo use because tank has to be attacked first ???
-    public boolean isTank() {
-        return isTank;
-    }
+    public abstract boolean isTank();
+
     // getter for the health
     public int getHealth() {
         return health;
     }
 
     // setter for the health
+    // used if some abilities are used on this minion
     public void setHealth(int health) {
         this.health = health;
     }
@@ -107,4 +107,23 @@ public abstract class Minion {
 
     public abstract boolean isFrontRow();
 
+    //used for each minion that has an ability
+    public abstract void useAbility(Minion target);
+
+    // used for each minion that Rippers ability
+    // is used on
+    // the ability is to decrease the attack damage of the target
+    // by 2
+    public void decreaseAttackDamage() {
+        this.attackDamage -= 2; // decrease the attack damage by 2
+        if (this.attackDamage < 0) {
+            this.attackDamage = 0;
+        }
+    }
+
+    // used for each minion that TheCursedOne ability
+    // is used on
+    protected void setAttackDamage(int number) {
+        this.attackDamage = number;
+    }
 }

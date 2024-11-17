@@ -3,7 +3,7 @@ package game;
 import java.util.ArrayList;
 
 // Class gameboard is managing the gameboard
-// this class is the must
+// this class is a must
 // its the place where the action is happening
 public class Gameboard {
     private static final int ROWS = 4; // 4 rows, 2 for each player
@@ -112,6 +112,79 @@ public class Gameboard {
         }
 
         return null; // successful attack, no errors
+    }
+    // very similar to attackCard, used the same logic
+    public String useAbility(int userRow, int userCol, int targetRow, int targetCol, int playerIdx) {
+        Minion user = gameboard[userRow][userCol];
+        Minion target = gameboard[targetRow][targetCol];
+
+        if (user == null) {
+            return "No card at user position.";
+        }
+
+        if (user.isFrozen()) {
+            return "Attacker card is frozen.";
+        }
+
+        if (user.hasAttacked()) {
+            return "Attacker card has already attacked this turn.";
+        }
+
+        // the only diff from attack card, is that Disciple
+        // can operate only on ally cards
+        // and Goliath can operate only on enemy cards
+        // instead of attacking we use the ability
+        if (user instanceof Disciple) {
+            if (!isAlly(playerIdx, targetRow)) {
+                return "Attacked card does not belong to the current player.";
+            }
+        } else {
+            if (!isEnemy(playerIdx, targetRow)) {
+                return "Attacked card does not belong to the enemy.";
+            }
+
+            //LOGIC COPIED FROM attackCard
+            // Check for tanks on the opponent's front row
+            boolean hasTank = false;
+            int enemyFrontRow = (playerIdx == 1) ? 1 : 2;
+            for (int i = 0; i < COLS; i++) {
+                Minion enemyCard = gameboard[enemyFrontRow][i];
+                if (enemyCard != null && enemyCard.isTank()) {
+                    hasTank = true;
+                    break;
+                }
+            }
+
+            // If there are tanks, ensure the target is a tank
+            if (hasTank && (target == null || !target.isTank())) {
+                return "Attacked card is not of type 'Tank'.";
+            }
+        }
+
+        user.useAbility(target);
+        user.setHasAttackedThisTurn(true);
+        // after the ability is used, some cards may have the health 0
+        // this means they are dead and I remove them
+        if(target.getHealth() == 0) {
+            removeCardAndShiftLeft(targetRow, targetCol);
+        }
+        return null;
+    }
+
+    // logic for finding if a minion is an enemy or an ally
+    private boolean isEnemy(int playerIdx, int row) {
+        // we use the gameboard to determine if the card is an enemy or an ally
+        if (playerIdx == 1 && row <= 1) {
+            return true;
+        } else if (playerIdx == 2 && row >= 2) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    // if its not an enemy, then its an ally
+    private boolean isAlly(int playerIdx, int row) {
+        return !isEnemy(playerIdx, row);
     }
 
     private void removeCardAndShiftLeft(int row, int col) {

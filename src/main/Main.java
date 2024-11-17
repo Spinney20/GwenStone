@@ -286,6 +286,26 @@ public final class Main {
 
                     output.add(cardOutput);
                     break;
+                case "cardUsesAbility":
+                    int userRow = action.getCardAttacker().getX();
+                    int userCol = action.getCardAttacker().getY();
+                    int targetRowPrim = action.getCardAttacked().getX();
+                    int targetColPrim = action.getCardAttacked().getY();
+
+                    String abilityResult = gameboard.useAbility(userRow, userCol, targetRowPrim, targetColPrim, game.getCurrentPlayer());
+
+                    if (abilityResult != null) {
+                        gameOutput.put("command", "cardUsesAbility");
+                        gameOutput.put("error", abilityResult);
+                        gameOutput.set("cardAttacker", objectMapper.createObjectNode()
+                                .put("x", userRow)
+                                .put("y", userCol));
+                        gameOutput.set("cardAttacked", objectMapper.createObjectNode()
+                                .put("x", targetRowPrim)
+                                .put("y", targetColPrim));
+                        output.add(gameOutput);
+                    }
+                    break;
 
 
                 default:

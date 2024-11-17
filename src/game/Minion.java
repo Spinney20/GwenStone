@@ -66,7 +66,6 @@ public abstract class Minion {
         this.hasAttackedThisTurn = hasAttackedThisTurn;
     }
 
-    //todo use because tank has to be attacked first ???
     public abstract boolean isTank();
 
     // getter for the health
@@ -125,5 +124,14 @@ public abstract class Minion {
     // is used on
     protected void setAttackDamage(int number) {
         this.attackDamage = number;
+    }
+
+    public void setFrozen() {
+        isFrozen = true;
+    }
+
+    // used to unfreeze after turn ending
+    public void setUnfrozen() {
+        isFrozen = false;
     }
 }

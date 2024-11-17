@@ -12,6 +12,7 @@ public class Miraj extends Minion {
         return true;
     }
 
+    //Miraj's ability is to swap health with another minion
     @Override
     public void useAbility(Minion target) {
         int tempHealth = this.getHealth();

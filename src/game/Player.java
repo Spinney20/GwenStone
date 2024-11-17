@@ -24,7 +24,9 @@ public class Player {
         this.hero = hero;
     }
 
+    // creating a minion from the card input
     private Minion createMinionFromCardInput(CardInput cardInput) {
+        // i do this by the name
         String name = cardInput.getName();
         switch (name) {
             case "Goliath":

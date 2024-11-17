@@ -306,12 +306,72 @@ public final class Main {
                         output.add(gameOutput);
                     }
                     break;
+                case "useAttackHero":
+                    int HeroAttackerRow = action.getCardAttacker().getX();
+                    int HeroAttackerCol = action.getCardAttacker().getY();
 
+                    String HeroAttackResult = game.attackHero(HeroAttackerRow, HeroAttackerCol, game.getCurrentPlayer());
 
-                default:
-                    System.out.println("error " + action.getCommand());
+                    if(HeroAttackResult != null) {
+                        gameOutput.put("command", "useAttackHero");
+                        gameOutput.put("error", HeroAttackResult);
+                        gameOutput.set("cardAttacker", objectMapper.createObjectNode()
+                                .put("x", HeroAttackerRow)
+                                .put("y", HeroAttackerCol));
+                        output.add(gameOutput);
+                    }
+
+                    if(game.isEnemyHeroDead(game.getCurrentPlayer())) {
+                        if(game.getCurrentPlayer() == 1) {
+                            gameOutput.put("gameEnded", "Player one killed the enemy hero.");
+                        } else {
+                            gameOutput.put("gameEnded", "Player two killed the enemy hero.");
+                        }
+                        output.add(gameOutput);                    }
                     break;
-            }
+                case "useHeroAbility":
+                    int affectedRow = action.getAffectedRow();
+                    String heroAbilityResult = game.useHeroAbility(affectedRow, game.getCurrentPlayer());
+
+                    if(heroAbilityResult != null) {
+                        gameOutput.put("command", "useHeroAbility");
+                        gameOutput.put("error", heroAbilityResult);
+                        gameOutput.put("affectedRow", affectedRow);
+                        output.add(gameOutput);
+                    }
+                    break;
+                case "getFrozenCardsOnTable":
+                    ArrayList<Minion> frozenCards = game.getFrozenCardsOnTable();
+                    ArrayNode frozenCardsOutput = objectMapper.createArrayNode();
+
+                    gameOutput.put("command", "getFrozenCardsOnTable");
+                    gameOutput.set("output", frozenCardsOutput);
+                    output.add(gameOutput);
+                    for(Minion possibleFrozenCard : frozenCards) {
+                        ObjectNode cardNode = objectMapper.createObjectNode();
+                        cardNode.put("mana", possibleFrozenCard.getMana());
+                        cardNode.put("attackDamage", possibleFrozenCard.getAttackDamage());
+                        cardNode.put("health", possibleFrozenCard.getHealth());
+                        cardNode.put("description", possibleFrozenCard.getDescription());
+
+                        ArrayNode colorsNode = objectMapper.createArrayNode();
+                        for (String color : possibleFrozenCard.getColors()) {
+                            colorsNode.add(color);
+                        }
+                        cardNode.set("colors", colorsNode);
+
+                        cardNode.put("name", possibleFrozenCard.getName());
+                        frozenCardsOutput.add(cardNode);
+                    }
+
+                    break;
+                    default:
+                        System.out.println("error " + action.getCommand());
+                        break;
+
+
+                }
+
         }
 
         ObjectWriter objectWriter = objectMapper.writerWithDefaultPrettyPrinter();

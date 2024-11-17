@@ -14,7 +14,7 @@ public class Warden extends Minion {
 
     @Override
     public void useAbility(Minion target) {
-    }
+    } // no ability
 
     public boolean isTank() {
         return true;

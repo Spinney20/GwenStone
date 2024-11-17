@@ -187,7 +187,9 @@ public class Gameboard {
         return !isEnemy(playerIdx, row);
     }
 
-    private void removeCardAndShiftLeft(int row, int col) {
+    //main logic forr removing a card from the gameboard
+    // i have to shift all the remainied cards to the left
+    public void removeCardAndShiftLeft(int row, int col) {
 
         // shifting all cards to the left
         for (int i = col; i < COLS - 1; i++) {
@@ -208,4 +210,5 @@ public class Gameboard {
         }
         return gameboard[x][y];
     }
+
 }

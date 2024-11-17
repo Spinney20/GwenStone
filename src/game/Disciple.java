@@ -12,6 +12,7 @@ public class Disciple extends Minion {
         return false;
     }
 
+    //disciple ability is to heal 2 health
     @Override
     public void useAbility(Minion target) {
         target.setHealth(target.getHealth() + 2);

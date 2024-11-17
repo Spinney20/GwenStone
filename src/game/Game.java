@@ -1,6 +1,8 @@
 package game;
 
 import java.util.ArrayList;
+
+import fileio.CardInput;
 import fileio.DecksInput;
 import fileio.StartGameInput;
 
@@ -26,12 +28,13 @@ public class Game {
     private void initializeGame(StartGameInput startGame, DecksInput playerOneDecks, DecksInput playerTwoDecks) {
         this.playerOne = new Player(
                 playerOneDecks.getDecks().get(startGame.getPlayerOneDeckIdx()), // getting the deck from the input
-                new Hero(startGame.getPlayerOneHero()), // getting the hero from the input
+                createHero(startGame.getPlayerOneHero()), // getting the hero from the input
                 startGame.getShuffleSeed()
         );
+
         this.playerTwo = new Player(
                 playerTwoDecks.getDecks().get(startGame.getPlayerTwoDeckIdx()), // getting the deck from the input
-                new Hero(startGame.getPlayerTwoHero()), // getting the hero from the input
+                createHero(startGame.getPlayerTwoHero()), // getting the hero from the input
                 startGame.getShuffleSeed()
         );
 
@@ -87,6 +90,7 @@ public class Game {
         if (startingPlayerId == 1) {
             if (currentPlayer == 1) {
                 currentPlayer = 2;
+                unfreezeCurrentPlayerCards(1);
             } else {
                 //corrected this
                 // mana shuld be incremented for the next round
@@ -96,20 +100,27 @@ public class Game {
                 currentPlayer = 1;
                 round++;
                 resetAllMinions(); // reset all minions' attack states
+                playerOne.getHero().setHasUsedAbility(false);
+                playerTwo.getHero().setHasUsedAbility(false);
                 playerOne.drawCard();
                 playerTwo.drawCard();
+                unfreezeCurrentPlayerCards(2);
             }
         } else if (startingPlayerId == 2) {
             if (currentPlayer == 2) {
                 currentPlayer = 1;
+                unfreezeCurrentPlayerCards(2);
             } else {
                 playerTwo.incrementMana(round + 1);
                 playerOne.incrementMana(round + 1);
                 currentPlayer = 2;
                 round++;
-                resetAllMinions(); // reset all minions' attack states
+                resetAllMinions();// reset all minions' attack states
+                playerOne.getHero().setHasUsedAbility(false);
+                playerTwo.getHero().setHasUsedAbility(false);
                 playerOne.drawCard();
                 playerTwo.drawCard();
+                unfreezeCurrentPlayerCards(1);
             }
         }
     }
@@ -118,6 +129,9 @@ public class Game {
     //iterating thru the gameboard and setting the hasAttackedThisTurn
     // to false for all minions -> new round
     //todo I think i will need this for unfroxing
+    // I COULDNT USE THIS METHOD TO UNFREEZE BECEAUSE
+    // THE UNFREEZING IS DONE IN THE END OF THE TURN NOT THE ROUND
+    // BAD LUCK
     private void resetAllMinions() {
         for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 5; col++) {
@@ -128,12 +142,188 @@ public class Game {
             }
         }
     }
+    // so i had to create a new method
+    private void unfreezeCurrentPlayerCards(int currentPlayer) {
+        int startRow, endRow;
+
+        if (currentPlayer == 1) {
+            startRow = 2;
+            endRow = 3;
+        } else {
+            startRow = 0;
+            endRow = 1;
+        }
+
+        for (int row = startRow; row <= endRow; row++) {
+            for (int col = 0; col < 5; col++) {
+                Minion minion = gameboard.getCardAtPosition(row, col);
+                if (minion != null && minion.isFrozen()) {
+                    minion.setUnfrozen();
+                }
+            }
+        }
+    }
+
 
     public String attackCard(int attackerRow, int attackerCol, int targetRow, int targetCol) {
         // As I said in the Gameboard class attackCard method
         // returns the error if its the case or null if not
         String result = gameboard.attackCard(attackerRow, attackerCol, targetRow, targetCol, currentPlayer);
         return result; // result will be used in main
+    }
+    // I tried to make this inspired by the attackCard method
+    // used in gameboard
+    // I put attackHero in the game class because
+    // its not an operation done on the gameboard
+    public String attackHero(int attackerRow, int attackerCol, int currentPlayer) {
+        Minion attacker = gameboard.getCardAtPosition(attackerRow, attackerCol);
+        Hero enemyHero;
+        int enemyFrontRow;
+
+        if (currentPlayer == 1) {
+            enemyHero = playerTwo.getHero();
+            enemyFrontRow = 1;
+        } else {
+            enemyHero = playerOne.getHero();
+            enemyFrontRow = 2;
+        }
+
+        if (attacker == null || attacker.isFrozen()) {
+            return "Attacker card is frozen.";
+        }
+
+        if (attacker.hasAttacked()) {
+            return "Attacker card has already attacked this turn.";
+        }
+
+        //Hero can only be attacked
+        // if there are no tanks in the front row
+        boolean hasTank = false;
+        for (int i = 0; i < 5; i++) {
+            Minion enemyCard = gameboard.getCardAtPosition(enemyFrontRow, i);
+            if (enemyCard != null && enemyCard.isTank()) {
+                hasTank = true;
+                break;
+            }
+        }
+
+        if (hasTank) {
+            return "Attacked card is not of type 'Tank'.";
+        }
+
+        // Decreasing its health by the attacker's attack damage
+        enemyHero.setHealth(enemyHero.getHealth() - attacker.getAttackDamage());
+        attacker.setHasAttackedThisTurn(true);
+
+        // the hreo being dead is checked in the main class
+
+        return null;
+    }
+
+    // on the same skel as before, it returns the error
+    public String useHeroAbility(int row, int currentPlayer) {
+        Hero currentHero;
+
+        if (currentPlayer == 1) {
+            currentHero = playerOne.getHero();
+        } else {
+            currentHero = playerTwo.getHero();
+        }
+
+        if (currentHero.getMana() > getPlayerMana(currentPlayer)) {
+            return "Not enough mana to use hero's ability.";
+        }
+
+        if (currentHero.hasUsedAbility) {
+            return "Hero has already attacked this turn.";
+        }
+
+        if (currentHero instanceof LordRoyce || currentHero instanceof EmpressThorina) {
+            if (!isEnemyRow(currentPlayer, row)) {
+                return "Selected row does not belong to the enemy.";
+            }
+        } else if (currentHero instanceof GeneralKocioraw || currentHero instanceof KingMudface) {
+            if (!isAllyRow(currentPlayer, row)) {
+                return "Selected row does not belong to the current player.";
+            }
+        }
+        // using the hero ability
+        currentHero.useHeroAbility(row, gameboard);
+        currentHero.setHasUsedAbility(true);
+        // decrementing the mana for the hero ability
+        if(currentPlayer == 1) {
+            playerOne.decrementMana(currentHero.getMana());
+        } else {
+            playerTwo.decrementMana(currentHero.getMana());
+        }
+
+        return null;
+    }
+
+    private boolean isEnemyRow(int currentPlayer, int row) {
+        if (currentPlayer == 1) {
+            if (row == 0 || row == 1) {
+                return true;
+            } else {
+                return false;
+            }
+        } else if (currentPlayer == 2) {
+            if (row == 2 || row == 3) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    private boolean isAllyRow(int currentPlayer, int row) {
+        if (currentPlayer == 1) {
+            if (row == 2 || row == 3) {
+                return true;
+            } else {
+                return false;
+            }
+        } else if (currentPlayer == 2) {
+            if (row == 0 || row == 1) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+    // checking if the enemy hero is dead
+    // this is done in the main class
+    public boolean isEnemyHeroDead(int currentPlayer) {
+        Hero enemyHero;
+        if (currentPlayer == 1) {
+            enemyHero = playerTwo.getHero();
+        } else {
+            enemyHero = playerOne.getHero();
+        }
+
+        if (enemyHero.getHealth() <= 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private Hero createHero(CardInput heroInput) {
+        switch (heroInput.getName()) {
+            case "Lord Royce":
+                return new LordRoyce(heroInput);
+            case "Empress Thorina":
+                return new EmpressThorina(heroInput);
+            case "General Kocioraw":
+                return new GeneralKocioraw(heroInput);
+            case "King Mudface":
+                return new KingMudface(heroInput);
+        }
+        return null;
     }
 
 
@@ -164,6 +354,19 @@ public class Game {
             return playerTwo.getMana();
         }
         return -1;
+    }
+
+    public ArrayList<Minion> getFrozenCardsOnTable() {
+        ArrayList<Minion> frozenCards = new ArrayList<>();
+        for (int row = 0; row < 4; row++) {
+            for (int col = 0; col < 5; col++) {
+                Minion card = gameboard.getCardAtPosition(row, col);
+                if (card != null && card.isFrozen()) {
+                    frozenCards.add(card);
+                }
+            }
+        }
+        return frozenCards;
     }
 
     //getter for each player because i need it

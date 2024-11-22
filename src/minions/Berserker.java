@@ -1,6 +1,7 @@
-package game;
+package minions;
 
 import fileio.CardInput;
+import game.Minion;
 
 public class Berserker extends Minion {
     public Berserker(CardInput cardInput) {

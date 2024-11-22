@@ -122,7 +122,7 @@ public abstract class Minion {
 
     // used for each minion that TheCursedOne ability
     // is used on
-    protected void setAttackDamage(int number) {
+    public void setAttackDamage(int number) {
         this.attackDamage = number;
     }
 

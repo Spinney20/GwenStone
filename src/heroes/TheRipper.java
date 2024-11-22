@@ -1,6 +1,7 @@
-package game;
+package heroes;
 
 import fileio.CardInput;
+import game.Minion;
 
 public class TheRipper extends Minion {
     public TheRipper(CardInput cardInput) {

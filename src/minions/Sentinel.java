@@ -1,22 +1,23 @@
-package game;
+package minions;
 
 import fileio.CardInput;
+import game.Minion;
 
-public class Goliath extends Minion {
-    public Goliath(CardInput cardInput) {
+public class Sentinel extends Minion {
+    public Sentinel(CardInput cardInput) {
         super(cardInput);
     }
 
     @Override
     public boolean isFrontRow() {
-        return true; // Goliath is tank -> first row
+        return false; // on the back row
     }
 
     @Override
     public void useAbility(Minion target) {
-    }
+    } // no ability
 
     public boolean isTank() {
-        return true;
+        return false;
     }
 }

@@ -1,15 +1,16 @@
-package game;
+package minions;
 
 import fileio.CardInput;
+import game.Minion;
 
-public class Sentinel extends Minion {
-    public Sentinel(CardInput cardInput) {
+public class Warden extends Minion {
+    public Warden(CardInput cardInput) {
         super(cardInput);
     }
 
     @Override
     public boolean isFrontRow() {
-        return false; // on the back row
+        return true; // must be in the front row
     }
 
     @Override
@@ -17,6 +18,6 @@ public class Sentinel extends Minion {
     } // no ability
 
     public boolean isTank() {
-        return false;
+        return true;
     }
 }

@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import fileio.CardInput;
 import fileio.DecksInput;
 import fileio.StartGameInput;
+import minions.EmpressThorina;
+import minions.GeneralKocioraw;
+import minions.KingMudface;
+import minions.LordRoyce;
 
 // This is the most important class, in which
 // all the logic is managed
@@ -16,6 +20,9 @@ public class Game {
     private int round;
     private Gameboard gameboard;
     private String errorMessage;
+    public static int playerOneWins;
+    public static int playerTwoWins;
+    public static int totalGamesPlayed;
 
     public Game(StartGameInput startGame, DecksInput playerOneDecks, DecksInput playerTwoDecks) {
         initializeGame(startGame, playerOneDecks, playerTwoDecks);
@@ -306,11 +313,24 @@ public class Game {
         }
 
         if (enemyHero.getHealth() <= 0) {
+            // Added the win to the player
+            // basically if the hero has under 0 health
+            // and the curr player is 1, player 1 wins
+            // if the curr player is 2, player 2 wins
+            if(currentPlayer == 1) {
+                playerOneWins++;
+            } else {
+                playerTwoWins++;
+            }
+            // either of the players wins
+            // the total games played is incremented
+            totalGamesPlayed++;
             return true;
         } else {
             return false;
         }
     }
+
 
     private Hero createHero(CardInput heroInput) {
         switch (heroInput.getName()) {
@@ -394,4 +414,18 @@ public class Game {
     public String getErrorMessage() {
         return errorMessage;
     }
+
+    public static int getPlayerOneWins() {
+        return playerOneWins;
+    }
+
+    public static int getPlayerTwoWins() {
+        return playerTwoWins;
+    }
+
+    public static int getTotalGamesPlayed() {
+        return totalGamesPlayed;
+    }
+
+
 }

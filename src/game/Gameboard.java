@@ -1,5 +1,7 @@
 package game;
 
+import heroes.Disciple;
+
 import java.util.ArrayList;
 
 // Class gameboard is managing the gameboard

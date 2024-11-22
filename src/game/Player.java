@@ -4,6 +4,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import fileio.CardInput;
+import heroes.Disciple;
+import heroes.Miraj;
+import heroes.TheCursedOne;
+import heroes.TheRipper;
+import minions.Berserker;
+import minions.Goliath;
+import minions.Sentinel;
+import minions.Warden;
 
 // Class player is managing the player
 // the player has a deck, a hero, a hand and a mana
@@ -103,5 +111,9 @@ public class Player {
 
     public Hero getHero() {
         return hero;
+    }
+
+    public void resetHand() {
+        hand.clear();
     }
 }

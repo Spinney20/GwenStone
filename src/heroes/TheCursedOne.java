@@ -1,6 +1,7 @@
-package game;
+package heroes;
 
 import fileio.CardInput;
+import game.Minion;
 
 public class TheCursedOne extends Minion {
     public TheCursedOne(CardInput cardInput) {

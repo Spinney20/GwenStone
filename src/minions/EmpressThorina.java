@@ -1,6 +1,9 @@
-package game;
+package minions;
 
 import fileio.CardInput;
+import game.Gameboard;
+import game.Hero;
+import game.Minion;
 
 public class EmpressThorina extends Hero {
     public EmpressThorina(CardInput cardInput) {

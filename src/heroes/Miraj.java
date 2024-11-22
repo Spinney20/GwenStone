@@ -1,6 +1,7 @@
-package game;
+package heroes;
 
 import fileio.CardInput;
+import game.Minion;
 
 public class Miraj extends Minion {
     public Miraj(CardInput cardInput) {

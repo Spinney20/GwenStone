@@ -3,22 +3,24 @@ package minions;
 import fileio.CardInput;
 import game.Minion;
 
-public class Warden extends Minion {
-    public Warden(final CardInput cardInput) {
+public class TheRipper extends Minion {
+    public TheRipper(final CardInput cardInput) {
         super(cardInput);
     }
 
     @Override
     public final boolean isFrontRow() {
-        return true; // must be in the front row
+        return true;
     }
 
+    //TheRipper's ability is to decrease enemy minions' attack by 2
     @Override
-    public void useAbility(final Minion target) {
-    } // no ability
+    public final void useAbility(final Minion target) {
+        target.decreaseAttackDamage();
+    }
 
     public final boolean isTank() {
-        return true;
+        return false;
     }
 
     /***
@@ -37,3 +39,4 @@ public class Warden extends Minion {
         return null;
     }
 }
+

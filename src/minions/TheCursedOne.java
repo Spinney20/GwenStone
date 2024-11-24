@@ -3,22 +3,31 @@ package minions;
 import fileio.CardInput;
 import game.Minion;
 
-public class Warden extends Minion {
-    public Warden(final CardInput cardInput) {
+public class TheCursedOne extends Minion {
+    public TheCursedOne(final CardInput cardInput) {
         super(cardInput);
     }
 
     @Override
     public final boolean isFrontRow() {
-        return true; // must be in the front row
+        return false;
     }
 
+    //TheCursedOne's ability is to swap its attack and health
+    //if the health is less than or equal to 0, it will be set to 0
     @Override
-    public void useAbility(final Minion target) {
-    } // no ability
+    public final void useAbility(final Minion target) {
+        int tempAttack = target.getAttackDamage();
+        target.setAttackDamage(target.getHealth());
+        target.setHealth(tempAttack);
+
+        if (target.getHealth() <= 0) {
+            target.setHealth(0);
+        }
+    }
 
     public final boolean isTank() {
-        return true;
+        return false;
     }
 
     /***
@@ -37,3 +46,5 @@ public class Warden extends Minion {
         return null;
     }
 }
+
+

@@ -4,14 +4,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import fileio.CardInput;
-import heroes.Disciple;
-import heroes.Miraj;
-import heroes.TheCursedOne;
-import heroes.TheRipper;
+import minions.Disciple;
+import minions.Miraj;
+import minions.TheCursedOne;
+import minions.TheRipper;
 import minions.Berserker;
 import minions.Goliath;
 import minions.Sentinel;
 import minions.Warden;
+
+import static main.Constants.MAX_MANA;
 
 // Class player is managing the player
 // the player has a deck, a hero, a hand and a mana
@@ -21,7 +23,7 @@ public class Player {
     private ArrayList<Minion> hand;
     private int mana = 1;
 
-    public Player(ArrayList<CardInput> deck, Hero hero, int shuffleSeed) {
+    public Player(final ArrayList<CardInput> deck, final Hero hero, final int shuffleSeed) {
         this.deck = new ArrayList<>();
         for (CardInput cardInput : deck) {
             Minion minion = createMinionFromCardInput(cardInput);
@@ -33,7 +35,7 @@ public class Player {
     }
 
     // creating a minion from the card input
-    private Minion createMinionFromCardInput(CardInput cardInput) {
+    private Minion createMinionFromCardInput(final CardInput cardInput) {
         // i do this by the name
         String name = cardInput.getName();
         switch (name) {
@@ -53,11 +55,15 @@ public class Player {
                 return new TheCursedOne(cardInput);
             case "Disciple":
                 return new Disciple(cardInput);
+            default:
+                return null;
         }
-        return null;
     }
 
-    // drawing a card from the deck
+    /***
+     * Drawing a card from the deck and adding it to the hand
+     *
+     */
     public void drawCard() {
         // if the deck is not empty, then we can draw a card
         if (!deck.isEmpty()) {
@@ -68,18 +74,31 @@ public class Player {
         }
     }
 
-    // incrementing the mana, this will be used after each round
-    public void incrementMana(int additionalMana) {
+    /***
+     * Incrementing the mana
+     * Will be used after each round
+     * max mana to be incremented is 10
+     * @param additionalMana - mana to be added
+     */
+    public void incrementMana(final int additionalMana) {
         // after the 10th round the mana will be incremented by 10
         // 10 is the max mana to be incremented
-        if (additionalMana > 10) {
-            additionalMana = 10;
+        int manaToAdd = additionalMana;
+        if (manaToAdd > MAX_MANA) {
+            manaToAdd = MAX_MANA;
         }
-        this.mana += additionalMana;
+        this.mana += manaToAdd;
     }
 
-    // deceamenting the mana, this will be used when a card is placed on the gameboard
-    public boolean decrementMana(int cost) {
+    /***
+     * decrementing the mana
+     * this is used when a card is placed on the board
+     * or when an ability is used
+     * or when a hero ability is used
+     * @param cost - mana cost of the card
+     * @return - true if the mana is decremented, false otherwise
+     */
+    public boolean decrementMana(final int cost) {
         // making sure we have enough mana to place the card
         // i think its a double check, but its good to have it
         if (this.mana >= cost) {
@@ -90,30 +109,20 @@ public class Player {
         }
     }
 
-
-    // I will maybe use when I will go for another game || multiple games
-    public void resetMana() {
-        mana = 0;
-    }
-
     // getter for mana
-    public int getMana() {
+    public final int getMana() {
         return mana;
     }
 
-    public ArrayList<Minion> getHand() {
+    public final ArrayList<Minion> getHand() {
         return hand;
     }
 
-    public ArrayList<Minion> getDeck() {
+    public final ArrayList<Minion> getDeck() {
         return deck;
     }
 
-    public Hero getHero() {
+    public final Hero getHero() {
         return hero;
-    }
-
-    public void resetHand() {
-        hand.clear();
     }
 }

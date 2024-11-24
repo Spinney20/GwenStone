@@ -3,22 +3,26 @@ package minions;
 import fileio.CardInput;
 import game.Minion;
 
-public class Warden extends Minion {
-    public Warden(final CardInput cardInput) {
+public class Miraj extends Minion {
+    public Miraj(final CardInput cardInput) {
         super(cardInput);
     }
 
     @Override
     public final boolean isFrontRow() {
-        return true; // must be in the front row
+        return true;
     }
 
+    //Miraj's ability is to swap health with another minion
     @Override
-    public void useAbility(final Minion target) {
-    } // no ability
+    public final void useAbility(final Minion target) {
+        int tempHealth = this.getHealth();
+        this.setHealth(target.getHealth());
+        target.setHealth(tempHealth);
+    }
 
     public final boolean isTank() {
-        return true;
+        return false;
     }
 
     /***
@@ -37,3 +41,4 @@ public class Warden extends Minion {
         return null;
     }
 }
+

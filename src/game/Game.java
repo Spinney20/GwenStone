@@ -5,10 +5,18 @@ import java.util.ArrayList;
 import fileio.CardInput;
 import fileio.DecksInput;
 import fileio.StartGameInput;
-import minions.EmpressThorina;
-import minions.GeneralKocioraw;
-import minions.KingMudface;
-import minions.LordRoyce;
+import heroes.EmpressThorina;
+import heroes.GeneralKocioraw;
+import heroes.KingMudface;
+import heroes.LordRoyce;
+
+import static main.Constants.ROWS;
+import static main.Constants.COLUMNS;
+import static main.Constants.BACK_ROW_PLAYER1;
+import static main.Constants.FRONT_ROW_PLAYER2;
+import static main.Constants.FRONT_ROW_PLAYER1;
+import static main.Constants.BACK_ROW_PLAYER2;
+
 
 // This is the most important class, in which
 // all the logic is managed
@@ -20,27 +28,31 @@ public class Game {
     private int round;
     private Gameboard gameboard;
     private String errorMessage;
-    public static int playerOneWins;
-    public static int playerTwoWins;
-    public static int totalGamesPlayed;
+    private static int playerOneWins;
+    private static int playerTwoWins;
+    private static int totalGamesPlayed;
 
-    public Game(StartGameInput startGame, DecksInput playerOneDecks, DecksInput playerTwoDecks) {
+    public Game(final StartGameInput startGame, final DecksInput playerOneDecks,
+                final DecksInput playerTwoDecks) {
         initializeGame(startGame, playerOneDecks, playerTwoDecks);
     }
 
-    //initializing the game
+    // initializing the game
     // this is the first thing that is done
     // when the game is created
     // the players are created, the gameboard is created
-    private void initializeGame(StartGameInput startGame, DecksInput playerOneDecks, DecksInput playerTwoDecks) {
+    private void initializeGame(final StartGameInput startGame, final DecksInput playerOneDecks,
+                                final DecksInput playerTwoDecks) {
         this.playerOne = new Player(
-                playerOneDecks.getDecks().get(startGame.getPlayerOneDeckIdx()), // getting the deck from the input
+                playerOneDecks.getDecks().
+                        get(startGame.getPlayerOneDeckIdx()), // getting the deck from the input
                 createHero(startGame.getPlayerOneHero()), // getting the hero from the input
                 startGame.getShuffleSeed()
         );
 
         this.playerTwo = new Player(
-                playerTwoDecks.getDecks().get(startGame.getPlayerTwoDeckIdx()), // getting the deck from the input
+                playerTwoDecks.getDecks().
+                        get(startGame.getPlayerTwoDeckIdx()), // getting the deck from the input
                 createHero(startGame.getPlayerTwoHero()), // getting the hero from the input
                 startGame.getShuffleSeed()
         );
@@ -54,75 +66,90 @@ public class Game {
         this.round = 1; // the game starts from round 1
         this.gameboard = new Gameboard();
     }
-    // placing a card on the table
-    public boolean placeCard(int playerIndex, int handIndex) {
-        Player currentPlayer;
+
+    /**
+     * basically with this method I only try to get the card I want to place on the table
+     * then ,,pass" it to the addCard method from the gameboard which ACTUALLY places the card
+     * on the table
+     * Also Im verifying if the player has enough mana to place it and if the placing
+     * on the table was done correctly +
+     * @param playerIndex is the index of the player who is supposed to place the card
+     * @param handIndex I need the index to know which card from the hand Im placing on the table
+     * @return just returning true if I placed the card, false if it failed or it was impossible
+     */
+    public boolean placeCard(final int playerIndex, final int handIndex) {
+        Player placingPlayer;
         // stabilizing the current player
         if (playerIndex == 1) {
-            currentPlayer = playerOne;
+            placingPlayer = playerOne;
         } else {
-            currentPlayer = playerTwo;
+            placingPlayer = playerTwo;
         }
         // getting the card to place
-        Minion cardToPlace = currentPlayer.getHand().get(handIndex);
+        Minion cardToPlace = placingPlayer.getHand().get(handIndex);
         // error message if the card cannot be placed
         // because of the mana
-        if (!currentPlayer.decrementMana(cardToPlace.getMana())) {
+        if (!placingPlayer.decrementMana(cardToPlace.getMana())) {
             errorMessage = "Not enough mana to place card on table.";
             return false;
         }
 
         boolean placedSuccessfully = gameboard.addCard(cardToPlace, playerIndex);
         if (placedSuccessfully) {
-            currentPlayer.getHand().remove(handIndex);
+            placingPlayer.getHand().remove(handIndex);
             return true; // card was placed successfully
         } else {
-            //error message if the card cannot be placed
-            // because the row is full
-            currentPlayer.incrementMana(cardToPlace.getMana());
-            errorMessage = "Cannot place card on table since row is full.";
+            // getting the mana back if placing didn't take place
+            placingPlayer.incrementMana(cardToPlace.getMana());
             return false;
         }
     }
 
-
+    /**
+     * Function for ending a player's turn
+     * Ok so basically we have to main cases
+     * one is starting player is 1 and
+     * the 2nd one is the starting player is 2
+     * to avoid drawing cards when I shouldn't
+     * I will check if the current player is the starting player
+     * and I will draw cards only if the current player is not the starting player
+     * which means that the starting player has already ended his turn
+     * I ALSO TREAT ENDING THE ROUND HERE
+     * CHECKING WHO IS THE STARTING PLAYER HELPS ME A LOT HERE
+     * So if the NOT STARTING PLAYER is ending his turn
+     * it means that the round is ending, and Im doing
+     * what im supossed to do when ending a round
+     */
     public void endPlayerTurn() {
-        //Ok so basically we have to main cases
-        // one is the starting player is 1 and
-        // the 2nd one is the starting player is 2
-        // to avoid drawing cards when I shouldn't
-        // I will check if the current player is the starting player
-        // and I will draw cards only if the current player is not the starting player
-        // which means that the starting player has already ended his turn
         if (startingPlayerId == 1) {
             if (currentPlayer == 1) {
                 currentPlayer = 2;
                 unfreezeCurrentPlayerCards(1);
-            } else {
+            } else { // ENDING THE ROUND
                 //corrected this
                 // mana shuld be incremented for the next round
                 // after the current round ends (the second player's turn)
                 playerOne.incrementMana(round + 1);
                 playerTwo.incrementMana(round + 1);
-                currentPlayer = 1;
-                round++;
+                currentPlayer = 1; //going back to the starting player
+                round++; //ending the round means that we go to the next round
                 resetAllMinions(); // reset all minions' attack states
                 playerOne.getHero().setHasUsedAbility(false);
                 playerTwo.getHero().setHasUsedAbility(false);
-                playerOne.drawCard();
-                playerTwo.drawCard();
+                playerOne.drawCard(); // after ending the round, a new round starts
+                playerTwo.drawCard(); // so every player draws a new card
                 unfreezeCurrentPlayerCards(2);
             }
         } else if (startingPlayerId == 2) {
             if (currentPlayer == 2) {
                 currentPlayer = 1;
                 unfreezeCurrentPlayerCards(2);
-            } else {
+            } else { //treating ending the round stuff like I said
                 playerTwo.incrementMana(round + 1);
                 playerOne.incrementMana(round + 1);
                 currentPlayer = 2;
                 round++;
-                resetAllMinions();// reset all minions' attack states
+                resetAllMinions(); // reset all minions' attack states
                 playerOne.getHero().setHasUsedAbility(false);
                 playerTwo.getHero().setHasUsedAbility(false);
                 playerOne.drawCard();
@@ -140,8 +167,8 @@ public class Game {
     // THE UNFREEZING IS DONE IN THE END OF THE TURN NOT THE ROUND
     // BAD LUCK
     private void resetAllMinions() {
-        for (int row = 0; row < 4; row++) {
-            for (int col = 0; col < 5; col++) {
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLUMNS; col++) {
                 Minion minion = gameboard.getBoard()[row][col];
                 if (minion != null) {
                     minion.setHasAttackedThisTurn(false);
@@ -150,19 +177,19 @@ public class Game {
         }
     }
     // so i had to create a new method
-    private void unfreezeCurrentPlayerCards(int currentPlayer) {
+    private void unfreezeCurrentPlayerCards(final int activePlayer) {
         int startRow, endRow;
 
-        if (currentPlayer == 1) {
-            startRow = 2;
-            endRow = 3;
+        if (activePlayer == 1) {
+            startRow = FRONT_ROW_PLAYER1; // ROW 2
+            endRow = BACK_ROW_PLAYER1; // ROW 3
         } else {
-            startRow = 0;
-            endRow = 1;
+            startRow = BACK_ROW_PLAYER2; // ROW 0
+            endRow = FRONT_ROW_PLAYER2; // ROW 1
         }
 
         for (int row = startRow; row <= endRow; row++) {
-            for (int col = 0; col < 5; col++) {
+            for (int col = 0; col < COLUMNS; col++) {
                 Minion minion = gameboard.getCardAtPosition(row, col);
                 if (minion != null && minion.isFrozen()) {
                     minion.setUnfrozen();
@@ -171,23 +198,52 @@ public class Game {
         }
     }
 
-
-    public String attackCard(int attackerRow, int attackerCol, int targetRow, int targetCol) {
+    /***
+     * This is just a method to kind of call the attackCard method from the gameboard
+     * and put the result in main, attacking the card is done in the gameboard
+     * so the method for that is in the gameboard class
+     * I just pass the next parameters to the gameboard's attackCard method
+     * @param attackerRow - the row of the attacker this is the row of the card that attacks
+     * @param attackerCol - the col of the attacker this is the col of the card that attacks4
+     * @param targetRow - the row of the target this is the row of the card that is attacked
+     * @param targetCol - the col of the target this is the col of the card that is attacked
+     * @returning the result of the attackCard method from the gameboard
+     */
+    public String attackCard(final int attackerRow, final int attackerCol,
+                             final int targetRow, final int targetCol) {
         // As I said in the Gameboard class attackCard method
         // returns the error if its the case or null if not
-        String result = gameboard.attackCard(attackerRow, attackerCol, targetRow, targetCol, currentPlayer);
+        String result = gameboard.attackCard(attackerRow, attackerCol,
+                                             targetRow, targetCol, currentPlayer);
         return result; // result will be used in main
     }
-    // I tried to make this inspired by the attackCard method
-    // used in gameboard
-    // I put attackHero in the game class because
-    // its not an operation done on the gameboard
-    public String attackHero(int attackerRow, int attackerCol, int currentPlayer) {
+
+    /***
+     * The logic is inspired from the attackCard method
+     * but now I have to attack the hero, that is not on the gameboard so i have to
+     * implement it here in the game class
+     * The method returns the error if its the case or null if everything is ok
+     * Im giving the following parameters
+     * @param attackerRow - the row of the attacker this is the row of the card that attacks
+     * @param attackerCol - the col of the attacker this is the col of the card that attacks
+     * @param attackingPlayer - the player that is attacking
+     * First im getting the attacker card from the gameboard
+     * then im getting the enemy hero and after i start checking for the usual errors
+     * if the attacker is frozen, if the attacker has already attacked etc
+     * then I check if the enemy hero can be attacked - search for enemy tanks
+     * because the hero can only be attacked if there are no tanks
+     * then I decrease the health of the enemy hero by the attacker's attack damage
+     * and set the attacker to have attacked this turn because attacking the hero
+     * also counts as an attack
+     * @return
+     */
+    public String attackHero(final int attackerRow, final int attackerCol,
+                             final int attackingPlayer) {
         Minion attacker = gameboard.getCardAtPosition(attackerRow, attackerCol);
         Hero enemyHero;
         int enemyFrontRow;
 
-        if (currentPlayer == 1) {
+        if (attackingPlayer == 1) {
             enemyHero = playerTwo.getHero();
             enemyFrontRow = 1;
         } else {
@@ -206,7 +262,7 @@ public class Game {
         //Hero can only be attacked
         // if there are no tanks in the front row
         boolean hasTank = false;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < COLUMNS; i++) {
             Minion enemyCard = gameboard.getCardAtPosition(enemyFrontRow, i);
             if (enemyCard != null && enemyCard.isTank()) {
                 hasTank = true;
@@ -227,38 +283,48 @@ public class Game {
         return null;
     }
 
-    // on the same skel as before, it returns the error
-    public String useHeroAbility(int row, int currentPlayer) {
+    /***
+     * On the same skel that I used before, I return the error that I should, or null
+     * if everything is ok
+     * Here I have to use the hero's ability, on some rowns meaning that I have to
+     * apply it to the gameboard
+     * First im getting the hero and then i do the basic checks
+     * if it has mana and id it has alr attacked
+     * But then as some heroes affect own minions and some enemy minions, depending
+     * on the hero I have to check if the row is valid
+     * if everything is ok, I apply the method useHeroAbility from the gameboard
+     * that will apply the hero's ability to the gameboard
+     * and then just setting the hero to have used the ability and decrementing the mana
+     * @param row - the row affected by heroes ability
+     * @param activePlayer - the player that is using the hero's ability
+     * @return
+     */
+    public String useHeroAbility(final int row, final int activePlayer) {
         Hero currentHero;
 
-        if (currentPlayer == 1) {
+        if (activePlayer == 1) {
             currentHero = playerOne.getHero();
         } else {
             currentHero = playerTwo.getHero();
         }
 
-        if (currentHero.getMana() > getPlayerMana(currentPlayer)) {
+        if (currentHero.getMana() > getPlayerMana(activePlayer)) {
             return "Not enough mana to use hero's ability.";
         }
 
-        if (currentHero.hasUsedAbility) {
+        if (currentHero.hasUsedAbility()) {
             return "Hero has already attacked this turn.";
         }
 
-        if (currentHero instanceof LordRoyce || currentHero instanceof EmpressThorina) {
-            if (!isEnemyRow(currentPlayer, row)) {
-                return "Selected row does not belong to the enemy.";
-            }
-        } else if (currentHero instanceof GeneralKocioraw || currentHero instanceof KingMudface) {
-            if (!isAllyRow(currentPlayer, row)) {
-                return "Selected row does not belong to the current player.";
-            }
+        String potentialError = currentHero.canTargetRow(isAllyRow(activePlayer, row));
+        if (potentialError != null) {
+            return potentialError;
         }
         // using the hero ability
         currentHero.useHeroAbility(row, gameboard);
         currentHero.setHasUsedAbility(true);
         // decrementing the mana for the hero ability
-        if(currentPlayer == 1) {
+        if (activePlayer == 1) {
             playerOne.decrementMana(currentHero.getMana());
         } else {
             playerTwo.decrementMana(currentHero.getMana());
@@ -267,46 +333,48 @@ public class Game {
         return null;
     }
 
-    private boolean isEnemyRow(int currentPlayer, int row) {
-        if (currentPlayer == 1) {
-            if (row == 0 || row == 1) {
+    private boolean isEnemyRow(final int activePlayer, final int row) {
+        if (activePlayer == 1) {
+            if (row == BACK_ROW_PLAYER2 || row == FRONT_ROW_PLAYER2) {
                 return true;
-            } else {
-                return false;
             }
-        } else if (currentPlayer == 2) {
-            if (row == 2 || row == 3) {
+            return false;
+        } else if (activePlayer == 2) {
+            if (row == FRONT_ROW_PLAYER1 || row == BACK_ROW_PLAYER1) {
                 return true;
-            } else {
-                return false;
             }
+            return false;
         } else {
             return false;
         }
     }
 
-    private boolean isAllyRow(int currentPlayer, int row) {
-        if (currentPlayer == 1) {
-            if (row == 2 || row == 3) {
+    private boolean isAllyRow(final int activePlayer, final int row) {
+        if (activePlayer == 1) {
+            if (row == FRONT_ROW_PLAYER1 || row == BACK_ROW_PLAYER1) {
                 return true;
-            } else {
-                return false;
             }
-        } else if (currentPlayer == 2) {
-            if (row == 0 || row == 1) {
+                return false;
+        } else if (activePlayer == 2) {
+            if (row == BACK_ROW_PLAYER2 || row == FRONT_ROW_PLAYER2) {
                 return true;
-            } else {
-                return false;
             }
+                return false;
         } else {
             return false;
         }
     }
-    // checking if the enemy hero is dead
-    // this is done in the main class
-    public boolean isEnemyHeroDead(int currentPlayer) {
+
+    /***
+     * just checking if the enemy hero is dead
+     * used for also treating the wins and game ending
+     * so here is where im incrementing the wins and the total games played
+     * @param activePlayer
+     * @return
+     */
+    public boolean isEnemyHeroDead(final int activePlayer) {
         Hero enemyHero;
-        if (currentPlayer == 1) {
+        if (activePlayer == 1) {
             enemyHero = playerTwo.getHero();
         } else {
             enemyHero = playerOne.getHero();
@@ -317,7 +385,7 @@ public class Game {
             // basically if the hero has under 0 health
             // and the curr player is 1, player 1 wins
             // if the curr player is 2, player 2 wins
-            if(currentPlayer == 1) {
+            if (activePlayer == 1) {
                 playerOneWins++;
             } else {
                 playerTwoWins++;
@@ -332,7 +400,7 @@ public class Game {
     }
 
 
-    private Hero createHero(CardInput heroInput) {
+    private Hero createHero(final CardInput heroInput) {
         switch (heroInput.getName()) {
             case "Lord Royce":
                 return new LordRoyce(heroInput);
@@ -342,32 +410,40 @@ public class Game {
                 return new GeneralKocioraw(heroInput);
             case "King Mudface":
                 return new KingMudface(heroInput);
+            default: // I must have a default case (checkstyle)
+                return null;
         }
-        return null;
     }
 
 
-    public ArrayList<ArrayList<Minion>> getCardsOnTable() {
+    public final ArrayList<ArrayList<Minion>> getCardsOnTable() {
         return gameboard.getCardsOnTable();
     }
 
-    public ArrayList<Minion> getPlayerOneDeck() {
+    public final ArrayList<Minion> getPlayerOneDeck() {
         return playerOne.getDeck();
     }
 
-    public ArrayList<Minion> getPlayerTwoDeck() {
+    public final ArrayList<Minion> getPlayerTwoDeck() {
         return playerTwo.getDeck();
     }
 
-    public Hero getPlayerOneHero() {
+    public final Hero getPlayerOneHero() {
         return playerOne.getHero();
     }
 
-    public Hero getPlayerTwoHero() {
+    public final Hero getPlayerTwoHero() {
         return playerTwo.getHero();
     }
 
-    public int getPlayerMana(int playerIndex) {
+    /***
+     * getting the player's mana and returning it
+     * this is like a getter of a getter because I need the mana
+     * from the player to get it in the main class
+     * @param playerIndex - i only need the index of the player
+     * @return
+     */
+    public int getPlayerMana(final int playerIndex) {
         if (playerIndex == 1) {
             return playerOne.getMana();
         } else if (playerIndex == 2) {
@@ -376,10 +452,15 @@ public class Game {
         return -1;
     }
 
+    /***
+     * iterating thru the gameboard and getting the frozen cards
+     * i need this because I have a command that needs them all
+     * @return
+     */
     public ArrayList<Minion> getFrozenCardsOnTable() {
         ArrayList<Minion> frozenCards = new ArrayList<>();
-        for (int row = 0; row < 4; row++) {
-            for (int col = 0; col < 5; col++) {
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLUMNS; col++) {
                 Minion card = gameboard.getCardAtPosition(row, col);
                 if (card != null && card.isFrozen()) {
                     frozenCards.add(card);
@@ -391,27 +472,23 @@ public class Game {
 
     //getter for each player because i need it
     // in the main class to get the player's hand
-    public Player getPlayerOne() {
+    public final Player getPlayerOne() {
         return playerOne;
     }
 
-    public Player getPlayerTwo() {
+    public final Player getPlayerTwo() {
         return playerTwo;
     }
 
-    public int getCurrentPlayer() {
+    public final int getCurrentPlayer() {
         return currentPlayer;
     }
 
-    public int getRound() {
-        return round;
-    }
-
-    public Gameboard getGameboard() {
+    public final Gameboard getGameboard() {
         return gameboard;
     }
 
-    public String getErrorMessage() {
+    public final String getErrorMessage() {
         return errorMessage;
     }
 
@@ -425,6 +502,27 @@ public class Game {
 
     public static int getTotalGamesPlayed() {
         return totalGamesPlayed;
+    }
+
+    /***
+     * I have to set this in 0 in main before starting the GAMES
+     */
+    public static void setPlayerOneWins() {
+        playerOneWins = 0;
+    }
+
+    /***
+     * I have to set this in 0 in main before starting the GAMES
+     */
+    public static void setPlayerTwoWins() {
+        playerTwoWins = 0;
+    }
+
+    /***
+     * I have to set this in 0 in main before starting the GAMES
+     */
+    public static void setTotalGamesPlayed() {
+        totalGamesPlayed = 0;
     }
 
 

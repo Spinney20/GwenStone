@@ -17,7 +17,7 @@ public abstract class Minion {
     private boolean hasAttackedThisTurn;
     private boolean isTank;
 
-    public Minion(CardInput cardInput) {
+    public Minion(final CardInput cardInput) {
         // just getting the values of the minion
         this.mana = cardInput.getMana();
         this.health = cardInput.getHealth();
@@ -36,9 +36,13 @@ public abstract class Minion {
             this.isTank = false;
         }
     }
-    // this makes the card receive the damage
-    // given by the attacker
-    public void takeDamage(int damage) {
+
+    /***
+     * this makes the minion receive damage
+     * given by the attacker
+     * @param damage - the damage that the minion will receive
+     */
+    public void takeDamage(final int damage) {
         this.health -= damage;
         if (this.health < 0) {
             this.health = 0;
@@ -47,72 +51,98 @@ public abstract class Minion {
     // if the card has under 0 health, then it is dead
     // we will use this to remove the card from the gameboard
     // if its dead
-    public boolean isDead() {
+    public final boolean isDead() {
         return this.health <= 0;
     }
     //todo use for ability
-    public boolean isFrozen() {
+    public final boolean isFrozen() {
         return isFrozen;
     }
-    // veryfing if the card has attacked this round
-    // basicallly a getter for the hasAttackedThisTurn
-    public boolean hasAttacked() {
+
+    /***
+     * veryifying if the card has attacked this turn
+     * basically a getter for the hasAttackedThisTurn variable
+     * @return - true if the card has attacked this turn
+     */
+    public final boolean hasAttacked() {
         return hasAttackedThisTurn;
     }
-    // setter for hasAttackedThisTurn variable
-    // used to set is as true after the card has attacked
-    // and to false when the round ends
-    public void setHasAttackedThisTurn(boolean hasAttackedThisTurn) {
+
+    /***
+     * setter for hasAttackedThisTurn variable
+     * used to set is as true after the card has attacked
+     * and to false when the round ends
+     * @param hasAttackedThisTurn - set to true if the card has attacked
+     */
+    public void setHasAttackedThisTurn(final boolean hasAttackedThisTurn) {
         this.hasAttackedThisTurn = hasAttackedThisTurn;
     }
 
+    /***
+     * this will be overriden in the minions
+     * some are tanks and should be placed in the front row
+     * others are not tanks and should be placed in the back row
+     * @return
+     */
     public abstract boolean isTank();
 
     // getter for the health
-    public int getHealth() {
+    public final int getHealth() {
         return health;
     }
 
     // setter for the health
     // used if some abilities are used on this minion
-    public void setHealth(int health) {
+    public final void setHealth(final int health) {
         this.health = health;
     }
 
     // getter for the attack damage
-    public int getAttackDamage() {
+    public final int getAttackDamage() {
         return attackDamage;
     }
 
     // getter for the mana
-    public int getMana() {
+    public final int getMana() {
         return mana;
     }
 
     // getter for the description
-    public String getDescription() {
+    public final String getDescription() {
         return description;
     }
 
     // getter for the colors
-    public List<String> getColors() {
+    public final List<String> getColors() {
         return colors;
     }
 
     // getter for the name
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
+    /***
+     * this will be overriden in the minions
+     * to know if the minion is in the front row or not
+     * basically tank or not tank
+     * @return
+     */
     public abstract boolean isFrontRow();
 
-    //used for each minion that has an ability
+
+    /***
+     * used for each minion that has an ability
+     * @param target - the minion that the ability will be used on
+     */
     public abstract void useAbility(Minion target);
 
-    // used for each minion that Rippers ability
-    // is used on
-    // the ability is to decrease the attack damage of the target
-    // by 2
+    /***
+     * used for each minion that Rippers ability
+     * is used on
+     * the ability is to decrease the attack damage of the target
+     * by 2
+     */
     public void decreaseAttackDamage() {
         this.attackDamage -= 2; // decrease the attack damage by 2
         if (this.attackDamage < 0) {
@@ -122,16 +152,32 @@ public abstract class Minion {
 
     // used for each minion that TheCursedOne ability
     // is used on
-    public void setAttackDamage(int number) {
+    public final void setAttackDamage(final int number) {
         this.attackDamage = number;
     }
 
+    /***
+     * used for each minion that should be frozen
+     */
     public void setFrozen() {
         isFrozen = true;
     }
 
-    // used to unfreeze after turn ending
+    /***
+     * used to unfreeze after the round ends
+     */
     public void setUnfrozen() {
         isFrozen = false;
     }
+
+    /***
+     * used for disciple vs goliath when applying the ability
+     * disciple can only target allies
+     * goliat can only target enemies
+     * @param target - the minion that the ability will be used on
+     * @param isAlly - true if the target is an ally, done with the method is ally
+     *               from gameboard
+      */
+    public abstract String canTarget(Minion target, boolean isAlly);
+
 }

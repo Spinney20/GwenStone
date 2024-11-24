@@ -1,41 +1,60 @@
 package game;
 
-import heroes.Disciple;
-
 import java.util.ArrayList;
+
+// importing the constants
+import static main.Constants.FRONT_ROW_PLAYER1;
+import static main.Constants.BACK_ROW_PLAYER1;
+import static main.Constants.BACK_ROW_PLAYER2;
+import static main.Constants.FRONT_ROW_PLAYER2;
+import static main.Constants.ROWS;
+import static main.Constants.COLUMNS;
 
 // Class gameboard is managing the gameboard
 // this class is a must
 // its the place where the action is happening
-public class Gameboard {
-    private static final int ROWS = 4; // 4 rows, 2 for each player
-    private static final int COLS = 5; // max 5 cards in a row
+public class Gameboard { // max 5 cards in a row
     private Minion[][] gameboard;
 
     public Gameboard() {
-        this.gameboard = new Minion[ROWS][COLS];
+        this.gameboard = new Minion[ROWS][COLUMNS];
     }
 
-    // adding a card to the gameboard
-    // PROBABLY THE HARDEST THING UNTIL NOW :(
-    public boolean addCard(Minion card, int playerIndex) {
+
+    /***
+     * This method is used to add a card to the gameboard
+     * it takes the minion that has to be placed and the player index
+     * the player index is used to determine where the card should be placed
+     * if the player index is 1, the card will be placed on the first player's side
+     * if the player index is 2, the card will be placed on the second player's side
+     * the method returns true if the card was successfully placed on the gameboard
+     * and false if the card could not be placed
+     * possible reasons for not being able to place the card are:
+     * - the row is full as it follows
+     * - the card is not a front row card and the front row is full
+     * - the card is not a back row card and the back row is full
+     * @param card - the card that has to be placed
+     * @param playerIndex - the index of the player that is placing the card
+     * @return true if the card was successfully placed, false otherwise
+     */
+    public boolean addCard(final Minion card, final int playerIndex) {
         int rowToPlace;
 
         if (playerIndex == 1) {
             if (card.isFrontRow()) {
-                rowToPlace = 2; // Front row for player 1
+                rowToPlace = FRONT_ROW_PLAYER1;
             } else {
-                rowToPlace = 3; // Back row for player 1
+                rowToPlace = BACK_ROW_PLAYER1;
             }
         } else {
             if (card.isFrontRow()) {
-                rowToPlace = 1; // Front row for player 2
+                rowToPlace = FRONT_ROW_PLAYER2;
             } else {
-                rowToPlace = 0; // Back row for player 2
+                rowToPlace = BACK_ROW_PLAYER2;
             }
         }
         //effectively placuinf the card on the gameboard
-        for (int i = 0; i < COLS; i++) {
+        for (int i = 0; i < COLUMNS; i++) {
             if (gameboard[rowToPlace][i] == null) {
                 gameboard[rowToPlace][i] = card;
                 return true;
@@ -44,15 +63,17 @@ public class Gameboard {
         return false;
     }
 
-    // this is getting all the cards on the table
-    // this is used to display the cards on the table
-    // just 2 fors for iterating thru the matrix
+    /***
+     * This is getting all the cards on the table
+     * iterating through the gameboard and adding the cards to a list
+     * @return - it returns a list of a list of minions (the minions on the table)
+     */
     public ArrayList<ArrayList<Minion>> getCardsOnTable() {
         ArrayList<ArrayList<Minion>> cardsOnTable = new ArrayList<>();
 
         for (int row = 0; row < ROWS; row++) {
             ArrayList<Minion> rowCards = new ArrayList<>();
-            for (int col = 0; col < COLS; col++) {
+            for (int col = 0; col < COLUMNS; col++) {
                 if (gameboard[row][col] != null) {
                     rowCards.add(gameboard[row][col]);
                 }
@@ -63,11 +84,31 @@ public class Gameboard {
         return cardsOnTable;
     }
 
-    // As i should have done with place card
-    // i will make this a public string and return the potential errors
-    // to avoid complex error handling
-    // i just return the error if its the case, if not i return null
-    public String attackCard(int attackerRow, int attackerCol, int targetRow, int targetCol, int attackingPlayer) {
+    /***
+     * As I should have done with the placement of the cards
+     * I am returning the error message instead of printing it
+     * to avoid complex error handling
+     * and null if the attack was successful
+     * First im getting the attacker and the target
+     * and then im proceeding to check if the attack is possible
+     * if its possible i check if there are tanks on the front row
+     * if the target is a tank its ok
+     * but if there are tanks on the front row and the target is not a tank
+     * the attack is not possible
+     * if everything is ok, I proceed to attack the target
+     * and apply the takeDamage method
+     * and then I make the attacker unable to attack again this turn
+     * by setting the hasAttackedThisTurn to true
+     * ALSO if the target is dead, I remove it from the gameboard
+     * @param attackerRow - the row where the attacker is
+     * @param attackerCol - the column where the attacker is
+     * @param targetRow - the row where the target is
+     * @param targetCol - the column where the target is
+     * @param attackingPlayer - the player that is attacking
+     * @return -errors if the attack was not successful null otherwise
+     */
+    public String attackCard(final int attackerRow, final int attackerCol, final int targetRow,
+                             final int targetCol, final int attackingPlayer) {
         Minion attacker = gameboard[attackerRow][attackerCol];
         Minion target = gameboard[targetRow][targetCol];
 
@@ -89,7 +130,7 @@ public class Gameboard {
         // Check for tanks on the opponent's front row
         boolean hasTank = false;
         int enemyFrontRow = (attackingPlayer == 1) ? 1 : 2;
-        for (int i = 0; i < COLS; i++) {
+        for (int i = 0; i < COLUMNS; i++) {
             Minion enemyCard = gameboard[enemyFrontRow][i];
             if (enemyCard != null && enemyCard.isTank()) {
                 hasTank = true;
@@ -115,8 +156,30 @@ public class Gameboard {
 
         return null; // successful attack, no errors
     }
-    // very similar to attackCard, used the same logic
-    public String useAbility(int userRow, int userCol, int targetRow, int targetCol, int playerIdx) {
+
+    /***
+     * This method is used to use the ability of a card
+     * I tried to have the same skel as the attackCard method
+     * first im getting the user and the target
+     * and then im proceeding to check if the ability is possible
+     * if its possible i check if there are tanks on the front row
+     * if the target is a tank its ok
+     * but if there are tanks on the front row and the target is not a tank
+     * the ability is not possible
+     * if everything is ok, I proceed to use the ability on the target
+     * just like in the attackCard method
+     * and then I make the user unable to attack again this turn
+     * by setting the hasAttackedThisTurn to true
+     * ALSO if the target is dead, I remove it from the gameboard
+     * @param userRow - the row where the user is
+     * @param userCol - the column where the user is
+     * @param targetRow - the row where the target is
+     * @param targetCol - the column where the target is
+     * @param playerIdx - the player that is using the ability
+     * @return -errors if the ability was not successful null otherwise
+     */
+    public String useAbility(final int userRow, final int userCol, final int targetRow,
+                             final int targetCol, final int playerIdx) {
         Minion user = gameboard[userRow][userCol];
         Minion target = gameboard[targetRow][targetCol];
 
@@ -136,20 +199,17 @@ public class Gameboard {
         // can operate only on ally cards
         // and Goliath can operate only on enemy cards
         // instead of attacking we use the ability
-        if (user instanceof Disciple) {
-            if (!isAlly(playerIdx, targetRow)) {
-                return "Attacked card does not belong to the current player.";
-            }
-        } else {
-            if (!isEnemy(playerIdx, targetRow)) {
-                return "Attacked card does not belong to the enemy.";
-            }
+        String potentialError = user.canTarget(target, isAlly(playerIdx, targetRow));
+        if (potentialError != null) {
+            return potentialError;
+        }
 
+        if (isEnemy(playerIdx, targetRow)) {
             //LOGIC COPIED FROM attackCard
             // Check for tanks on the opponent's front row
             boolean hasTank = false;
             int enemyFrontRow = (playerIdx == 1) ? 1 : 2;
-            for (int i = 0; i < COLS; i++) {
+            for (int i = 0; i < COLUMNS; i++) {
                 Minion enemyCard = gameboard[enemyFrontRow][i];
                 if (enemyCard != null && enemyCard.isTank()) {
                     hasTank = true;
@@ -167,50 +227,59 @@ public class Gameboard {
         user.setHasAttackedThisTurn(true);
         // after the ability is used, some cards may have the health 0
         // this means they are dead and I remove them
-        if(target.getHealth() == 0) {
+        if (target.getHealth() == 0) {
             removeCardAndShiftLeft(targetRow, targetCol);
         }
         return null;
     }
 
     // logic for finding if a minion is an enemy or an ally
-    private boolean isEnemy(int playerIdx, int row) {
+    private boolean isEnemy(final int playerIdx, final int row) {
         // we use the gameboard to determine if the card is an enemy or an ally
         if (playerIdx == 1 && row <= 1) {
             return true;
         } else if (playerIdx == 2 && row >= 2) {
             return true;
-        } else {
-            return false;
         }
+            return false;
     }
     // if its not an enemy, then its an ally
-    private boolean isAlly(int playerIdx, int row) {
+    private boolean isAlly(final int playerIdx, final int row) {
         return !isEnemy(playerIdx, row);
     }
 
-    //main logic forr removing a card from the gameboard
-    // i have to shift all the remainied cards to the left
-    public void removeCardAndShiftLeft(int row, int col) {
+    /***
+     * main logic for removing a card from the gameboard
+     * I remove it by shifting all the cards to the left
+     * @param row - row to remove the card from
+     * @param col - column to remove the card from
+     */
+    public void removeCardAndShiftLeft(final int row, final int col) {
 
         // shifting all cards to the left
-        for (int i = col; i < COLS - 1; i++) {
+        for (int i = col; i < COLUMNS - 1; i++) {
             gameboard[row][i] = gameboard[row][i + 1];
         }
 
-        // last pos to null
-        gameboard[row][COLS - 1] = null;
+        // last pos to null ofc
+        gameboard[row][COLUMNS - 1] = null;
     }
 
-    public Minion[][] getBoard() {
+    public final Minion[][] getBoard() {
         return gameboard;
     }
 
-    public Minion getCardAtPosition(int x, int y) {
-        if (x < 0 || x >= ROWS || y < 0 || y >= COLS) {
+    /***
+     * This method is used to get a card at a certain position
+     * I return null if the position is invalid
+     * @param x - the row
+     * @param y - the column
+     * @return
+     */
+    public Minion getCardAtPosition(final int x, final int y) {
+        if (x < 0 || x >= ROWS || y < 0 || y >= COLUMNS) {
             return null;
         }
         return gameboard[x][y];
     }
-
 }
